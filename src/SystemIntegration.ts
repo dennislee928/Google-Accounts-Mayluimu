@@ -21,9 +21,9 @@ export interface SystemIntegrationConfig {
 export class GoogleAccountAutomationSystem extends EventEmitter {
   private config: SystemIntegrationConfig;
   private logger: Logger;
-  private orchestrator: TaskOrchestrator;
-  private credentialStore: CredentialStore;
-  private monitoring: MonitoringService;
+  private orchestrator!: TaskOrchestrator;
+  private credentialStore!: CredentialStore;
+  private monitoring!: MonitoringService;
   private workers: Map<string, AccountCreator>;
   private isRunning: boolean = false;
 
@@ -385,7 +385,7 @@ export class GoogleAccountAutomationSystem extends EventEmitter {
       this.emit('systemAlert', alert);
     });
 
-    this.monitoring.on('healthStatusUpdate', (status) => {
+    this.monitoring.on('healthStatusUpdate', (status: any) => {
       if (status.status === 'unhealthy' && this.isRunning) {
         this.logger.error('System health degraded', status);
         this.emit('systemHealthDegraded', status);
