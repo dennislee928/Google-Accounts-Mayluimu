@@ -101,7 +101,7 @@
     - Create secure file transfer mechanisms
     - _Requirements: 3.4_
 
-  - [ ]* 5.4 Create security and performance tests
+  - [ ] 5.4 Create security and performance tests
     - Test encryption/decryption performance and correctness
     - Validate access control and audit logging
     - Load test database operations under concurrent access
@@ -126,7 +126,7 @@
     - Implement manual controls for pausing/resuming operations
     - _Requirements: 4.3, 4.4_
 
-  - [ ]* 6.4 Write monitoring system tests
+  - [ ] 6.4 Write monitoring system tests
     - Test alert triggering and notification delivery
     - Validate dashboard functionality and data accuracy
     - Test system behavior under various failure scenarios
