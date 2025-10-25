@@ -26,7 +26,7 @@
     - Add CRUD operations for account credentials
     - _Requirements: 3.1, 3.2, 3.4_
 
-  - [ ]* 2.4 Write unit tests for Worker functions
+  - [ ] 2.4 Write unit tests for Worker functions
     - Test proxy functionality with mock requests
     - Validate email generation and storage operations
     - Test error handling and retry logic
@@ -51,7 +51,7 @@
     - Add form data validation before submission
     - _Requirements: 1.1, 3.1_
 
-  - [ ]* 3.4 Create integration tests for browser automation
+  - [ ] 3.4 Create integration tests for browser automation
     - Test complete account creation flow with mock Google pages
     - Validate CAPTCHA handling and phone verification bypass
     - Test error scenarios and recovery mechanisms
@@ -76,7 +76,7 @@
     - Create performance metrics collection for each worker
     - _Requirements: 2.5, 4.1, 4.4_
 
-  - [ ]* 4.4 Write unit tests for orchestration logic
+  - [ ] 4.4 Write unit tests for orchestration logic
     - Test task distribution algorithms and load balancing
     - Validate rate limiting and timing control mechanisms
     - Test worker failure scenarios and recovery
