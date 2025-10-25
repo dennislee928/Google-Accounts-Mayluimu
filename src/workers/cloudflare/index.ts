@@ -44,6 +44,30 @@ export default {
         case '/store-credentials':
           return handleStoreCredentials(request, env, corsHeaders);
         
+        case '/check-inbox':
+          return handleCheckInbox(request, env, corsHeaders);
+        
+        case '/email-status':
+          return handleEmailStatus(request, env, corsHeaders);
+        
+        case '/cleanup-emails':
+          return handleCleanupEmails(request, env, corsHeaders);
+        
+        case '/get-credentials':
+          return handleGetCredentials(request, env, corsHeaders);
+        
+        case '/list-credentials':
+          return handleListCredentials(request, env, corsHeaders);
+        
+        case '/update-status':
+          return handleUpdateStatus(request, env, corsHeaders);
+        
+        case '/export-credentials':
+          return handleExportCredentials(request, env, corsHeaders);
+        
+        case '/credential-stats':
+          return handleCredentialStats(request, env, corsHeaders);
+        
         case '/health':
           return handleHealthCheck(corsHeaders);
         
@@ -126,24 +150,25 @@ async function handleTempEmail(request: Request, env: Env, corsHeaders: Record<s
   }
 
   try {
-    // Generate a simple temporary email
-    const timestamp = Date.now();
-    const randomId = Math.random().toString(36).substring(2, 15);
-    const tempEmail = `temp_${randomId}_${timestamp}@tempmail.org`;
+    // Import temp email service (would be bundled in actual deployment)
+    const { TempEmailService } = await import('./tempEmailService');
+    const tempEmailService = new TempEmailService(env.TEMP_EMAIL_API_KEY);
     
-    const emailData = {
-      email: tempEmail,
-      token: randomId,
-      expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // 24 hours
-      createdAt: new Date().toISOString()
-    };
-
+    // Generate temporary email with fallback
+    const emailData = await tempEmailService.generateEmail();
+    
     // Store temp email data for potential retrieval
-    await env.CREDENTIALS.put(`temp_email_${randomId}`, JSON.stringify(emailData), {
-      expirationTtl: 24 * 60 * 60 // 24 hours
+    const storageData = {
+      ...emailData,
+      createdAt: new Date().toISOString(),
+      expiresAt: emailData.expiresAt.toISOString()
+    };
+    
+    await env.CREDENTIALS.put(`temp_email_${emailData.token}`, JSON.stringify(storageData), {
+      expirationTtl: Math.floor((emailData.expiresAt.getTime() - Date.now()) / 1000)
     });
 
-    return new Response(JSON.stringify(emailData), {
+    return new Response(JSON.stringify(storageData), {
       headers: {
         ...corsHeaders,
         'Content-Type': 'application/json'
@@ -151,9 +176,27 @@ async function handleTempEmail(request: Request, env: Env, corsHeaders: Record<s
     });
   } catch (error) {
     console.error('Temp email error:', error);
-    return new Response('Failed to generate temp email', { 
-      status: 500, 
-      headers: corsHeaders 
+    
+    // Fallback to simple email generation
+    const timestamp = Date.now();
+    const randomId = Math.random().toString(36).substring(2, 15);
+    const fallbackEmail = {
+      email: `fallback_${randomId}_${timestamp}@tempmail.org`,
+      token: randomId,
+      expiresAt: new Date(Date.now() + 60 * 60 * 1000).toISOString(), // 1 hour
+      provider: 'fallback',
+      createdAt: new Date().toISOString()
+    };
+    
+    await env.CREDENTIALS.put(`temp_email_${randomId}`, JSON.stringify(fallbackEmail), {
+      expirationTtl: 60 * 60 // 1 hour
+    });
+    
+    return new Response(JSON.stringify(fallbackEmail), {
+      headers: {
+        ...corsHeaders,
+        'Content-Type': 'application/json'
+      }
     });
   }
 }
@@ -180,23 +223,10 @@ async function handleStoreCredentials(request: Request, env: Env, corsHeaders: R
       });
     }
 
-    // Encrypt sensitive data
-    const encryptedData = await encryptCredentials(credentials, env.ENCRYPTION_KEY);
+    const { CloudflareKVCredentialStorage } = await import('./credentialStorage');
+    const storage = new CloudflareKVCredentialStorage(env.CREDENTIALS, env.ENCRYPTION_KEY);
     
-    // Generate unique ID
-    const accountId = `account_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`;
-    
-    // Store in KV with metadata
-    const storageData = {
-      id: accountId,
-      encryptedCredentials: encryptedData,
-      createdAt: new Date().toISOString(),
-      lastAccessed: new Date().toISOString(),
-      accessCount: 0,
-      status: 'created'
-    };
-
-    await env.CREDENTIALS.put(accountId, JSON.stringify(storageData));
+    const accountId = await storage.store(credentials);
 
     return new Response(JSON.stringify({ 
       success: true, 
@@ -211,6 +241,324 @@ async function handleStoreCredentials(request: Request, env: Env, corsHeaders: R
   } catch (error) {
     console.error('Store credentials error:', error);
     return new Response('Failed to store credentials', { 
+      status: 500, 
+      headers: corsHeaders 
+    });
+  }
+}
+
+/**
+ * Check inbox for temporary email
+ */
+async function handleCheckInbox(request: Request, env: Env, corsHeaders: Record<string, string>): Promise<Response> {
+  if (request.method !== 'POST') {
+    return new Response('Method Not Allowed', { 
+      status: 405, 
+      headers: corsHeaders 
+    });
+  }
+
+  try {
+    const { email, token } = await request.json() as any;
+    
+    if (!email || !token) {
+      return new Response('Missing email or token', { 
+        status: 400, 
+        headers: corsHeaders 
+      });
+    }
+
+    const { TempEmailService } = await import('./tempEmailService');
+    const tempEmailService = new TempEmailService(env.TEMP_EMAIL_API_KEY);
+    
+    const messages = await tempEmailService.checkInbox(email, token);
+    
+    return new Response(JSON.stringify({ 
+      email, 
+      messages,
+      count: messages.length 
+    }), {
+      headers: {
+        ...corsHeaders,
+        'Content-Type': 'application/json'
+      }
+    });
+  } catch (error) {
+    console.error('Check inbox error:', error);
+    return new Response('Failed to check inbox', { 
+      status: 500, 
+      headers: corsHeaders 
+    });
+  }
+}
+
+/**
+ * Get email provider status
+ */
+async function handleEmailStatus(request: Request, env: Env, corsHeaders: Record<string, string>): Promise<Response> {
+  try {
+    const { TempEmailService } = await import('./tempEmailService');
+    const tempEmailService = new TempEmailService(env.TEMP_EMAIL_API_KEY);
+    
+    const providerStatus = await tempEmailService.getProviderStatus();
+    
+    return new Response(JSON.stringify({
+      providers: providerStatus,
+      timestamp: new Date().toISOString()
+    }), {
+      headers: {
+        ...corsHeaders,
+        'Content-Type': 'application/json'
+      }
+    });
+  } catch (error) {
+    console.error('Email status error:', error);
+    return new Response('Failed to get email status', { 
+      status: 500, 
+      headers: corsHeaders 
+    });
+  }
+}
+
+/**
+ * Cleanup expired temporary emails
+ */
+async function handleCleanupEmails(request: Request, env: Env, corsHeaders: Record<string, string>): Promise<Response> {
+  if (request.method !== 'POST') {
+    return new Response('Method Not Allowed', { 
+      status: 405, 
+      headers: corsHeaders 
+    });
+  }
+
+  try {
+    const { TempEmailService } = await import('./tempEmailService');
+    const tempEmailService = new TempEmailService(env.TEMP_EMAIL_API_KEY);
+    
+    const cleanedCount = await tempEmailService.cleanupExpiredEmails(env.CREDENTIALS);
+    
+    return new Response(JSON.stringify({
+      success: true,
+      cleanedCount,
+      timestamp: new Date().toISOString()
+    }), {
+      headers: {
+        ...corsHeaders,
+        'Content-Type': 'application/json'
+      }
+    });
+  } catch (error) {
+    console.error('Cleanup emails error:', error);
+    return new Response('Failed to cleanup emails', { 
+      status: 500, 
+      headers: corsHeaders 
+    });
+  }
+}
+
+/**
+ * Get credentials by ID
+ */
+async function handleGetCredentials(request: Request, env: Env, corsHeaders: Record<string, string>): Promise<Response> {
+  if (request.method !== 'GET') {
+    return new Response('Method Not Allowed', { 
+      status: 405, 
+      headers: corsHeaders 
+    });
+  }
+
+  try {
+    const url = new URL(request.url);
+    const id = url.searchParams.get('id');
+    
+    if (!id) {
+      return new Response('Missing credential ID', { 
+        status: 400, 
+        headers: corsHeaders 
+      });
+    }
+
+    const { CloudflareKVCredentialStorage } = await import('./credentialStorage');
+    const storage = new CloudflareKVCredentialStorage(env.CREDENTIALS, env.ENCRYPTION_KEY);
+    
+    const credentials = await storage.retrieve(id);
+    
+    if (!credentials) {
+      return new Response('Credentials not found', { 
+        status: 404, 
+        headers: corsHeaders 
+      });
+    }
+
+    return new Response(JSON.stringify(credentials), {
+      headers: {
+        ...corsHeaders,
+        'Content-Type': 'application/json'
+      }
+    });
+  } catch (error) {
+    console.error('Get credentials error:', error);
+    return new Response('Failed to get credentials', { 
+      status: 500, 
+      headers: corsHeaders 
+    });
+  }
+}
+
+/**
+ * List credentials with pagination and filtering
+ */
+async function handleListCredentials(request: Request, env: Env, corsHeaders: Record<string, string>): Promise<Response> {
+  if (request.method !== 'GET') {
+    return new Response('Method Not Allowed', { 
+      status: 405, 
+      headers: corsHeaders 
+    });
+  }
+
+  try {
+    const url = new URL(request.url);
+    const criteria = {
+      status: url.searchParams.get('status') || undefined,
+      workerId: url.searchParams.get('workerId') || undefined,
+      limit: parseInt(url.searchParams.get('limit') || '50'),
+      offset: parseInt(url.searchParams.get('offset') || '0'),
+      createdAfter: url.searchParams.get('createdAfter') || undefined,
+      createdBefore: url.searchParams.get('createdBefore') || undefined
+    };
+
+    const { CloudflareKVCredentialStorage } = await import('./credentialStorage');
+    const storage = new CloudflareKVCredentialStorage(env.CREDENTIALS, env.ENCRYPTION_KEY);
+    
+    const credentials = await storage.list(criteria);
+
+    return new Response(JSON.stringify({
+      credentials,
+      count: credentials.length,
+      criteria
+    }), {
+      headers: {
+        ...corsHeaders,
+        'Content-Type': 'application/json'
+      }
+    });
+  } catch (error) {
+    console.error('List credentials error:', error);
+    return new Response('Failed to list credentials', { 
+      status: 500, 
+      headers: corsHeaders 
+    });
+  }
+}
+
+/**
+ * Update credential status
+ */
+async function handleUpdateStatus(request: Request, env: Env, corsHeaders: Record<string, string>): Promise<Response> {
+  if (request.method !== 'POST') {
+    return new Response('Method Not Allowed', { 
+      status: 405, 
+      headers: corsHeaders 
+    });
+  }
+
+  try {
+    const { id, status } = await request.json() as any;
+    
+    if (!id || !status) {
+      return new Response('Missing ID or status', { 
+        status: 400, 
+        headers: corsHeaders 
+      });
+    }
+
+    if (!['active', 'suspended', 'deleted'].includes(status)) {
+      return new Response('Invalid status', { 
+        status: 400, 
+        headers: corsHeaders 
+      });
+    }
+
+    const { CloudflareKVCredentialStorage } = await import('./credentialStorage');
+    const storage = new CloudflareKVCredentialStorage(env.CREDENTIALS, env.ENCRYPTION_KEY);
+    
+    const success = await storage.updateStatus(id, status);
+
+    return new Response(JSON.stringify({
+      success,
+      message: success ? 'Status updated successfully' : 'Credential not found'
+    }), {
+      headers: {
+        ...corsHeaders,
+        'Content-Type': 'application/json'
+      }
+    });
+  } catch (error) {
+    console.error('Update status error:', error);
+    return new Response('Failed to update status', { 
+      status: 500, 
+      headers: corsHeaders 
+    });
+  }
+}
+
+/**
+ * Export credentials to encrypted CSV
+ */
+async function handleExportCredentials(request: Request, env: Env, corsHeaders: Record<string, string>): Promise<Response> {
+  if (request.method !== 'POST') {
+    return new Response('Method Not Allowed', { 
+      status: 405, 
+      headers: corsHeaders 
+    });
+  }
+
+  try {
+    const criteria = await request.json() as any;
+
+    const { CloudflareKVCredentialStorage } = await import('./credentialStorage');
+    const storage = new CloudflareKVCredentialStorage(env.CREDENTIALS, env.ENCRYPTION_KEY);
+    
+    const encryptedCsv = await storage.exportCredentials(criteria);
+
+    return new Response(JSON.stringify({
+      success: true,
+      encryptedData: encryptedCsv,
+      timestamp: new Date().toISOString()
+    }), {
+      headers: {
+        ...corsHeaders,
+        'Content-Type': 'application/json'
+      }
+    });
+  } catch (error) {
+    console.error('Export credentials error:', error);
+    return new Response('Failed to export credentials', { 
+      status: 500, 
+      headers: corsHeaders 
+    });
+  }
+}
+
+/**
+ * Get credential statistics
+ */
+async function handleCredentialStats(request: Request, env: Env, corsHeaders: Record<string, string>): Promise<Response> {
+  try {
+    const { CloudflareKVCredentialStorage } = await import('./credentialStorage');
+    const storage = new CloudflareKVCredentialStorage(env.CREDENTIALS, env.ENCRYPTION_KEY);
+    
+    const stats = await storage.getStats();
+
+    return new Response(JSON.stringify(stats), {
+      headers: {
+        ...corsHeaders,
+        'Content-Type': 'application/json'
+      }
+    });
+  } catch (error) {
+    console.error('Get stats error:', error);
+    return new Response('Failed to get statistics', { 
       status: 500, 
       headers: corsHeaders 
     });
@@ -255,34 +603,3 @@ function getRandomUserAgent(): string {
   return userAgents[Math.floor(Math.random() * userAgents.length)];
 }
 
-/**
- * Simple encryption for credentials (basic implementation)
- */
-async function encryptCredentials(credentials: any, key: string): Promise<string> {
-  const encoder = new TextEncoder();
-  const data = encoder.encode(JSON.stringify(credentials));
-  const keyData = encoder.encode(key.padEnd(32, '0').substring(0, 32));
-  
-  const cryptoKey = await crypto.subtle.importKey(
-    'raw',
-    keyData,
-    { name: 'AES-GCM' },
-    false,
-    ['encrypt']
-  );
-  
-  const iv = crypto.getRandomValues(new Uint8Array(12));
-  const encrypted = await crypto.subtle.encrypt(
-    { name: 'AES-GCM', iv },
-    cryptoKey,
-    data
-  );
-  
-  // Combine IV and encrypted data
-  const combined = new Uint8Array(iv.length + encrypted.byteLength);
-  combined.set(iv);
-  combined.set(new Uint8Array(encrypted), iv.length);
-  
-  // Convert to base64
-  return btoa(String.fromCharCode(...combined));
-}

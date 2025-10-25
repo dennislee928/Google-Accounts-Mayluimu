@@ -19,20 +19,24 @@
     - Add request/response logging and error handling
     - _Requirements: 1.3, 2.2_
 
-  - [-] 2.2 Add temporary email service integration
+  - [x] 2.2 Add temporary email service integration
+
 
     - Integrate with TempMail API for generating recovery emails
     - Implement email validation and cleanup logic
     - Add fallback mechanisms for email service failures
     - _Requirements: 1.4_
 
-  - [ ] 2.3 Implement credential storage in Cloudflare KV
+  - [x] 2.3 Implement credential storage in Cloudflare KV
+
+
     - Set up Cloudflare KV namespace for credential storage
     - Implement encryption/decryption for sensitive data
     - Add CRUD operations for account credentials
     - _Requirements: 3.1, 3.2, 3.4_
 
-  - [ ] 2.4 Write unit tests for Worker functions
+  - [-] 2.4 Write unit tests for Worker functions
+
     - Test proxy functionality with mock requests
     - Validate email generation and storage operations
     - Test error handling and retry logic
