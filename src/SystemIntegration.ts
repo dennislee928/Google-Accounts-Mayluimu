@@ -361,26 +361,26 @@ export class GoogleAccountAutomationSystem extends EventEmitter {
    */
   private setupEventHandlers(): void {
     // Orchestrator events
-    this.orchestrator.on('taskCompleted', ({ task, worker }) => {
+    this.orchestrator.on('taskCompleted', ({ task, worker }: any) => {
       this.monitoring.recordMetrics({
         totalAccountsCreated: this.monitoring['metrics'].totalAccountsCreated + 1
       });
       this.emit('accountCreated', { task, worker });
     });
 
-    this.orchestrator.on('taskFailed', ({ task, worker, error }) => {
+    this.orchestrator.on('taskFailed', ({ task, worker, error }: any) => {
       this.monitoring.recordMetrics({
         failedTasks: this.monitoring['metrics'].failedTasks + 1
       });
       this.emit('accountCreationFailed', { task, worker, error });
     });
 
-    this.orchestrator.on('systemHealthUpdate', (metrics) => {
+    this.orchestrator.on('systemHealthUpdate', (metrics: any) => {
       this.monitoring.recordMetrics(metrics);
     });
 
     // Monitoring events
-    this.monitoring.on('alertTriggered', (alert) => {
+    this.monitoring.on('alertTriggered', (alert: any) => {
       this.logger.warn('System alert triggered', alert);
       this.emit('systemAlert', alert);
     });

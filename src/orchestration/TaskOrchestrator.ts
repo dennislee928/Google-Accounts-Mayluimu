@@ -840,7 +840,7 @@ export class TaskOrchestrator extends EventEmitter implements ITaskOrchestrator 
    * Setup health monitor event handlers
    */
   private setupHealthMonitorEvents(): void {
-    this.healthMonitor.on('workerUnhealthy', (healthCheck) => {
+    this.healthMonitor.on('workerUnhealthy', (healthCheck: any) => {
       this.logger.warn('Worker health issue detected', { 
         workerId: healthCheck.workerId,
         issues: healthCheck.issues 
@@ -850,14 +850,14 @@ export class TaskOrchestrator extends EventEmitter implements ITaskOrchestrator 
       this.emit('workerHealthIssue', healthCheck);
     });
 
-    this.healthMonitor.on('workerRecoveryRequested', ({ workerId, attempt }) => {
+    this.healthMonitor.on('workerRecoveryRequested', ({ workerId, attempt }: any) => {
       this.logger.info('Worker recovery requested', { workerId, attempt });
       
       // Handle worker failure through existing mechanism
       this.handleWorkerFailure(workerId);
     });
 
-    this.healthMonitor.on('workerRecovered', ({ workerId }) => {
+    this.healthMonitor.on('workerRecovered', ({ workerId }: any) => {
       this.logger.info('Worker recovered successfully', { workerId });
       
       // Reset worker status
@@ -868,7 +868,7 @@ export class TaskOrchestrator extends EventEmitter implements ITaskOrchestrator 
       }
     });
 
-    this.healthMonitor.on('systemHealthUpdate', (metrics) => {
+    this.healthMonitor.on('systemHealthUpdate', (metrics: any) => {
       // Forward system health updates
       this.emit('systemHealthUpdate', metrics);
     });
