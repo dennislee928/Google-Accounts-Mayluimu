@@ -4,7 +4,7 @@
 
 import { describe, it, expect, beforeEach, afterEach, jest } from '@jest/globals';
 import { TaskOrchestrator, TaskOrchestratorConfig } from '../TaskOrchestrator';
-import { SystemConfig, WorkerStatus } from '../../types';
+import { SystemConfig } from '../../types';
 
 describe('TaskOrchestrator', () => {
   let orchestrator: TaskOrchestrator;
@@ -311,7 +311,7 @@ describe('TaskOrchestrator', () => {
   });
 
   describe('Event Emission', () => {
-    it('should emit system health updates', (done) => {
+    it('should emit system health updates', (done: () => void) => {
       orchestrator.on('systemHealthUpdate', (metrics) => {
         expect(metrics).toHaveProperty('healthyWorkers');
         done();
@@ -321,7 +321,7 @@ describe('TaskOrchestrator', () => {
       orchestrator.registerWorker('test-worker');
     });
 
-    it('should emit worker registration events', (done) => {
+    it('should emit worker registration events', (done: () => void) => {
       orchestrator.on('workerRegistered', ({ worker }) => {
         expect(worker.id).toBe('test-worker');
         done();
@@ -330,7 +330,7 @@ describe('TaskOrchestrator', () => {
       orchestrator.registerWorker('test-worker');
     });
 
-    it('should emit shutdown events', (done) => {
+    it('should emit shutdown events', (done: () => void) => {
       orchestrator.on('shutdown', () => {
         done();
       });

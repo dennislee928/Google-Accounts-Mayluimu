@@ -15,15 +15,15 @@
     "sourceMap": true,
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
-    "types": ["node", "jest"],
-    "moduleResolution": "node"
+    "moduleResolution": "node",
+    "allowSyntheticDefaultImports": true,
+    "noImplicitAny": false
   },
   "include": [
     "src/**/*"
   ],
   "exclude": [
     "node_modules",
-    "dist",
-    "**/*.test.ts"
+    "dist"
   ]
 }
