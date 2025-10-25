@@ -9,7 +9,7 @@ import { Logger } from '../utils';
 import { RateLimiter } from './RateLimiter';
 import { WorkerHealthMonitor } from './WorkerHealthMonitor';
 import { v4 as uuidv4 } from 'uuid';
-import { EventEmitter } from 'events';
+import { EventEmitter } from 'node:events';
 
 export interface TaskOrchestratorConfig {
   maxConcurrentTasks: number;
