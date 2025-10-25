@@ -2,6 +2,8 @@
  * Comprehensive monitoring and alerting service implementation
  */
 
+import * as process from 'node:process';
+import * as timers from 'node:timers';
 import { IMonitoringService } from '../interfaces';
 import { LogEntry, SystemMetrics, AlertRule, NotificationChannel } from '../types';
 import { Logger } from '../utils';

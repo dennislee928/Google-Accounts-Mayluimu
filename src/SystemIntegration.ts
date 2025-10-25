@@ -3,6 +3,7 @@
  * Main system orchestrator that brings all components together
  */
 
+import * as process from 'node:process';
 import { TaskOrchestrator, TaskOrchestratorConfig } from './orchestration/TaskOrchestrator';
 import { AccountCreator, AccountCreatorConfig } from './automation/AccountCreator';
 import { CredentialStore, DatabaseConfig } from './storage/CredentialStore';

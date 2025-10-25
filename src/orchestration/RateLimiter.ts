@@ -3,6 +3,7 @@
  * Implements configurable rate limiting to avoid anti-abuse detection
  */
 
+import * as timers from 'node:timers';
 import { Logger } from '../utils';
 import { SystemConfig } from '../types';
 

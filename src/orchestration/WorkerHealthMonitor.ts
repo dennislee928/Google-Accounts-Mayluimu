@@ -3,6 +3,7 @@
  * Monitors worker performance, health, and handles automatic recovery
  */
 
+import * as timers from 'node:timers';
 import { WorkerStatus, SystemMetrics } from '../types';
 import { Logger } from '../utils';
 import { EventEmitter } from 'node:events';
