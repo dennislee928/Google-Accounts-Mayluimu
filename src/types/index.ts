@@ -122,8 +122,8 @@ export interface TempEmailResponse {
 export interface CredentialStoreEntry {
   id: string;
   encryptedData: string;
-  createdAt: Date;
-  lastAccessed: Date;
+  createdAt: string;
+  lastAccessed: string;
   accessCount: number;
 }
 

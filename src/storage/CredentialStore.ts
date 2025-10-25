@@ -106,7 +106,10 @@ export class CredentialStore implements ICredentialStore {
       const row = result[0];
       
       // Decrypt sensitive data
-      const decryptedData = this.encryption.decryptObject(row.encrypted_data);
+      const decryptedData = this.encryption.decryptObject(row.encrypted_data) as {
+        password: string;
+        recoveryEmail?: string;
+      };
       
       // Update access tracking
       await this.executeQuery(
@@ -335,7 +338,8 @@ export class CredentialStore implements ICredentialStore {
   }
 
   private async initializeSQLite(): Promise<void> {
-    const Database = require('sqlite3').Database;
+    const sqlite3 = require('sqlite3');
+    const Database = sqlite3.Database;
     
     return new Promise((resolve, reject) => {
       this.db = new Database(this.config.connectionString.replace('sqlite:', ''), (err: any) => {
@@ -388,7 +392,7 @@ export class CredentialStore implements ICredentialStore {
           }
         });
       } else {
-        this.db.run(sql, params, function(err: any) {
+        this.db.run(sql, params, function(this: any, err: any) {
           if (err) {
             reject(err);
           } else {
