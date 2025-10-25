@@ -3,10 +3,18 @@
  * Monitors worker performance, health, and handles automatic recovery
  */
 
-import * as timers from 'node:timers';
+// Global Node.js types
+declare const setTimeout: any;
+declare const setInterval: any;
+declare const clearInterval: any;
+
 import { WorkerStatus, SystemMetrics } from '../types';
 import { Logger } from '../utils';
-import { EventEmitter } from 'node:events';
+// EventEmitter declaration
+declare class EventEmitter {
+  on(event: string, listener: (...args: any[]) => void): this;
+  emit(event: string, ...args: any[]): boolean;
+}
 
 export interface WorkerHealthConfig {
   heartbeatIntervalMs: number;
@@ -51,7 +59,7 @@ export class WorkerHealthMonitor extends EventEmitter {
     duration: number;
   }>>;
   private recoveryAttempts: Map<string, number>;
-  private monitoringInterval?: NodeJS.Timeout;
+  private monitoringInterval?: any;
 
   constructor(config: WorkerHealthConfig) {
     super();

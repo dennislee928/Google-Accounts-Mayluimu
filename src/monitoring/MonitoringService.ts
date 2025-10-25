@@ -2,12 +2,19 @@
  * Comprehensive monitoring and alerting service implementation
  */
 
-import * as process from 'node:process';
-import * as timers from 'node:timers';
+// Global Node.js types
+declare const process: any;
+declare const setInterval: any;
+declare const console: any;
+
 import { IMonitoringService } from '../interfaces';
 import { LogEntry, SystemMetrics, AlertRule, NotificationChannel } from '../types';
 import { Logger } from '../utils';
-import { EventEmitter } from 'node:events';
+// EventEmitter declaration
+declare class EventEmitter {
+  on(event: string, listener: (...args: any[]) => void): this;
+  emit(event: string, ...args: any[]): boolean;
+}
 
 export class MonitoringService extends EventEmitter implements IMonitoringService {
   private logger: Logger;

@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  google-account-automation:
+    build: .
+    container_name: google-account-automation
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - ACCOUNTS_PER_DAY=100
+      - ACCOUNTS_PER_HOUR=10
+      - MAX_CONCURRENT_WORKERS=5
+      - STORAGE_PROVIDER=database
+      - DATABASE_URL=sqlite:/app/data/accounts.db
+      - LOG_LEVEL=info
+      - ENABLE_METRICS=true
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+    ports:
+      - "3000:3000"
+    healthcheck:
+      test: ["CMD", "node", "-e", "console.log('Health check')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Optional: Add a monitoring dashboard
+  # dashboard:
+  #   image: grafana/grafana:latest
+  #   container_name: monitoring-dashboard
+  #   ports:
+  #     - "3001:3000"
+  #   environment:
+  #     - GF_SECURITY_ADMIN_PASSWORD=admin
+  #   volumes:
+  #     - grafana-data:/var/lib/grafana
+
+volumes:
+  grafana-data:

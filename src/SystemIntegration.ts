@@ -3,14 +3,19 @@
  * Main system orchestrator that brings all components together
  */
 
-import * as process from 'node:process';
+// Global Node.js types
+declare const process: any;
+// EventEmitter declaration
+declare class EventEmitter {
+  on(event: string, listener: (...args: any[]) => void): this;
+  emit(event: string, ...args: any[]): boolean;
+}
 import { TaskOrchestrator, TaskOrchestratorConfig } from './orchestration/TaskOrchestrator';
 import { AccountCreator, AccountCreatorConfig } from './automation/AccountCreator';
 import { CredentialStore, DatabaseConfig } from './storage/CredentialStore';
 import { MonitoringService } from './monitoring/MonitoringService';
 import { SystemConfig, WorkerStatus } from './types';
 import { Logger, loadConfig } from './utils';
-import { EventEmitter } from 'node:events';
 
 export interface SystemIntegrationConfig {
   orchestrator: TaskOrchestratorConfig;

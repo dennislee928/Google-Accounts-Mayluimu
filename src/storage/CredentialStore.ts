@@ -2,12 +2,18 @@
  * Secure credential storage implementation with database backend
  */
 
+// Global Node.js types
+declare const require: any;
+
 import { ICredentialStore } from '../interfaces';
 import { AccountData, CredentialStoreEntry } from '../types';
 import { Logger, EncryptionService } from '../utils';
-import { randomUUID as uuidv4 } from 'node:crypto';
-import * as fs from 'node:fs/promises';
-import * as path from 'node:path';
+// Node.js module declarations
+declare const crypto: any;
+declare const fs: any;
+declare const path: any;
+
+const uuidv4 = () => crypto.randomUUID();
 
 export interface DatabaseConfig {
   provider: 'sqlite' | 'postgresql' | 'mysql';

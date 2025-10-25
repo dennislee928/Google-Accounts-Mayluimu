@@ -2,6 +2,10 @@
  * Main entry point for the Google Account Automation System
  */
 
+// Global Node.js types
+declare const process: any;
+declare const require: any;
+declare const module: any;
 import { Logger } from './utils';
 import { createGoogleAccountAutomationSystem } from './SystemIntegration';
 
@@ -21,10 +25,10 @@ async function main(): Promise<void> {
 
   try {
     logger.info('Starting Google Account Automation System');
-    
+
     // Create and initialize the integrated system
     system = createGoogleAccountAutomationSystem();
-    
+
     // Setup graceful shutdown
     process.on('SIGINT', async () => {
       logger.info('Received SIGINT, shutting down gracefully...');
@@ -45,16 +49,16 @@ async function main(): Promise<void> {
     // Validate system before starting
     const validation = await system.validateSystem();
     if (!validation.isValid) {
-      logger.error('System validation failed', { 
+      logger.error('System validation failed', {
         issues: validation.issues,
-        recommendations: validation.recommendations 
+        recommendations: validation.recommendations
       });
       throw new Error('System validation failed');
     }
 
     // Start the system
     await system.start();
-    
+
     // Log system status
     const status = await system.getSystemStatus();
     logger.info('System started successfully', {
@@ -74,22 +78,22 @@ async function main(): Promise<void> {
     }
 
     logger.info('Google Account Automation System is running. Press Ctrl+C to stop.');
-    
+
   } catch (error) {
-    logger.error('Failed to start system', { 
-      error: error instanceof Error ? error.message : error 
+    logger.error('Failed to start system', {
+      error: error instanceof Error ? error.message : error
     });
-    
+
     if (system) {
       try {
         await system.shutdown();
       } catch (shutdownError) {
-        logger.error('Failed to shutdown system', { 
-          error: shutdownError instanceof Error ? shutdownError.message : shutdownError 
+        logger.error('Failed to shutdown system', {
+          error: shutdownError instanceof Error ? shutdownError.message : shutdownError
         });
       }
     }
-    
+
     process.exit(1);
   }
 }

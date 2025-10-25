@@ -3,7 +3,12 @@
  * Implements configurable rate limiting to avoid anti-abuse detection
  */
 
-import * as timers from 'node:timers';
+// Global Node.js types
+declare const setTimeout: any;
+declare const setInterval: any;
+declare const clearTimeout: any;
+declare const clearInterval: any;
+
 import { Logger } from '../utils';
 import { SystemConfig } from '../types';
 
@@ -31,8 +36,8 @@ export class RateLimiter {
   private config: RateLimitConfig;
   private state: RateLimitState;
   private logger: Logger;
-  private dailyResetTimeout?: NodeJS.Timeout;
-  private hourlyResetTimeout?: NodeJS.Timeout;
+  private dailyResetTimeout?: any;
+  private hourlyResetTimeout?: any;
 
   constructor(systemConfig: SystemConfig) {
     this.config = {

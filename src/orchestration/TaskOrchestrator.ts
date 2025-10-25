@@ -3,13 +3,24 @@
  * Handles task distribution, worker coordination, and system monitoring
  */
 
+// Global Node.js types
+declare const setTimeout: any;
+declare const setInterval: any;
+declare const clearInterval: any;
+
 import { ITaskOrchestrator } from '../interfaces';
 import { CreationTask, WorkerStatus, AccountData, SystemConfig } from '../types';
 import { Logger } from '../utils';
 import { RateLimiter } from './RateLimiter';
 import { WorkerHealthMonitor } from './WorkerHealthMonitor';
-import { randomUUID as uuidv4 } from 'node:crypto';
-import { EventEmitter } from 'node:events';
+// Node.js crypto declaration
+declare const crypto: any;
+const uuidv4 = () => crypto.randomUUID();
+// EventEmitter declaration
+declare class EventEmitter {
+  on(event: string, listener: (...args: any[]) => void): this;
+  emit(event: string, ...args: any[]): boolean;
+}
 
 export interface TaskOrchestratorConfig {
   maxConcurrentTasks: number;
@@ -36,8 +47,8 @@ export class TaskOrchestrator extends EventEmitter implements ITaskOrchestrator 
   private workers: Map<string, WorkerStatus>;
   private isRunning: boolean = false;
   private isPaused: boolean = false;
-  private healthCheckInterval?: NodeJS.Timeout;
-  private taskProcessingInterval?: NodeJS.Timeout;
+  private healthCheckInterval?: any;
+  private taskProcessingInterval?: any;
 
   constructor(config: TaskOrchestratorConfig, systemConfig: SystemConfig) {
     super();
