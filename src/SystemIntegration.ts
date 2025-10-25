@@ -9,7 +9,7 @@ import { CredentialStore, DatabaseConfig } from './storage/CredentialStore';
 import { MonitoringService } from './monitoring/MonitoringService';
 import { SystemConfig, WorkerStatus } from './types';
 import { Logger, loadConfig } from './utils';
-import { EventEmitter } from 'events';
+import { EventEmitter } from 'node:events';
 
 export interface SystemIntegrationConfig {
   orchestrator: TaskOrchestratorConfig;
