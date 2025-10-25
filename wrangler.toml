@@ -1,0 +1,24 @@
+# Cloudflare Worker configuration
+name = "google-account-automation-worker"
+main = "src/workers/cloudflare/index.ts"
+compatibility_date = "2023-10-30"
+
+[env.production]
+name = "google-account-automation-worker-prod"
+
+[env.staging]
+name = "google-account-automation-worker-staging"
+
+# KV Namespaces for credential storage
+[[kv_namespaces]]
+binding = "CREDENTIALS"
+id = "your-kv-namespace-id"
+preview_id = "your-preview-kv-namespace-id"
+
+# Environment variables
+[vars]
+ENVIRONMENT = "development"
+
+# Secrets (set via wrangler secret put)
+# ENCRYPTION_KEY
+# TEMP_EMAIL_API_KEY
