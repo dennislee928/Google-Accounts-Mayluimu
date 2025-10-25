@@ -1,0 +1,121 @@
+version: '3.8'
+
+services:
+  google-account-automation:
+    build:
+      context: ..
+      dockerfile: Docker Desktop/Dockerfile
+    container_name: google-account-automation
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - ACCOUNTS_PER_DAY=100
+      - ACCOUNTS_PER_HOUR=10
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY:-your-secure-encryption-key-here}
+      - DATABASE_URL=${DATABASE_URL:-sqlite:///app/data/accounts.db}
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      - PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
+      - PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
+    volumes:
+      - automation_data:/app/data
+      - automation_logs:/app/logs
+      - automation_exports:/app/exports
+      - automation_screenshots:/app/screenshots
+    networks:
+      - automation_network
+    healthcheck:
+      test: ["CMD", "node", "-e", "console.log('Health check passed')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - SETGID
+      - SETUID
+    read_only: false
+    tmpfs:
+      - /tmp:noexec,nosuid,size=100m
+
+  # Optional: Database service (if using PostgreSQL instead of SQLite)
+  postgres:
+    image: postgres:15-alpine
+    container_name: automation-postgres
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB:-automation}
+      - POSTGRES_USER=${POSTGRES_USER:-automation}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-secure-password}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - automation_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-automation}"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    profiles:
+      - postgres
+
+  # Optional: Redis for caching and session management
+  redis:
+    image: redis:7-alpine
+    container_name: automation-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-secure-redis-password}
+    volumes:
+      - redis_data:/data
+    networks:
+      - automation_network
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    profiles:
+      - redis
+
+  # Optional: Monitoring with Prometheus
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: automation-prometheus
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    networks:
+      - automation_network
+    profiles:
+      - monitoring
+
+volumes:
+  automation_data:
+    driver: local
+  automation_logs:
+    driver: local
+  automation_exports:
+    driver: local
+  automation_screenshots:
+    driver: local
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  prometheus_data:
+    driver: local
+
+networks:
+  automation_network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
