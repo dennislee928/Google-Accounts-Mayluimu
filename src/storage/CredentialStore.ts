@@ -5,9 +5,9 @@
 import { ICredentialStore } from '../interfaces';
 import { AccountData, CredentialStoreEntry } from '../types';
 import { Logger, EncryptionService } from '../utils';
-import { v4 as uuidv4 } from 'uuid';
-import * as fs from 'fs/promises';
-import * as path from 'path';
+import { randomUUID as uuidv4 } from 'node:crypto';
+import * as fs from 'node:fs/promises';
+import * as path from 'node:path';
 
 export interface DatabaseConfig {
   provider: 'sqlite' | 'postgresql' | 'mysql';

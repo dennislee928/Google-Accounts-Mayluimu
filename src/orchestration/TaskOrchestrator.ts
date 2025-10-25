@@ -8,7 +8,7 @@ import { CreationTask, WorkerStatus, AccountData, SystemConfig } from '../types'
 import { Logger } from '../utils';
 import { RateLimiter } from './RateLimiter';
 import { WorkerHealthMonitor } from './WorkerHealthMonitor';
-import { v4 as uuidv4 } from 'uuid';
+import { randomUUID as uuidv4 } from 'node:crypto';
 import { EventEmitter } from 'node:events';
 
 export interface TaskOrchestratorConfig {

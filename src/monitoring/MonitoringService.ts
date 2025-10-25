@@ -5,7 +5,7 @@
 import { IMonitoringService } from '../interfaces';
 import { LogEntry, SystemMetrics, AlertRule, NotificationChannel } from '../types';
 import { Logger } from '../utils';
-import { EventEmitter } from 'events';
+import { EventEmitter } from 'node:events';
 
 export class MonitoringService extends EventEmitter implements IMonitoringService {
   private logger: Logger;
